@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "jsonllm"
+version = "0.1.0"
+description = ""
+authors = ["rahulgs12 <gsr1998@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+transformers = "^4.27.4"
+jsonschema = "^4.17.3"
+torch = "^2.0.0"
+accelerate = "^0.18.0"
+bitsandbytes = "^0.38.1"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.22.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
