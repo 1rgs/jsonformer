@@ -3,10 +3,6 @@ import torch
 
 
 class NumberStoppingCriteria(StoppingCriteria):
-    """
-    This class can be used to stop generation when there is a repeated decimal point in the generated text.
-    """
-
     def __init__(self, tokenizer: PreTrainedTokenizer, precision: int = 2):
         self.tokenizer = tokenizer
         self.precision = precision
@@ -17,16 +13,11 @@ class NumberStoppingCriteria(StoppingCriteria):
         scores: torch.FloatTensor,
     ) -> bool:
         decoded = self.tokenizer.decode(input_ids[0], skip_special_tokens=True)
-        if ".." in decoded:
-            print("Stopping because of ..")
-            return True
-
-        if decoded.strip().count(".") > 1:
-            print("Stopping because of multiple .")
+        if decoded.count(".") > 1:
             return True
 
         if (
-            decoded.strip().count(".") == 1
+            decoded.count(".") == 1
             and len(decoded.strip().split(".")[1]) > self.precision
         ):
             return True
@@ -36,7 +27,9 @@ class NumberStoppingCriteria(StoppingCriteria):
 
 class OutputNumbersTokens(LogitsWarper):
     def __init__(self, tokenizer: PreTrainedTokenizer, prompt: str):
-        self.whitelist_tokens = [tokenizer.eos_token_id]
+        self.whitelist_tokens = [
+            # tokenizer.eos_token_id
+        ]
         self.tokenized_prompt = tokenizer(prompt, return_tensors="pt")
 
         for token_str, token_id in tokenizer.get_vocab().items():

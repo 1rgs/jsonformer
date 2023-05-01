@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "jsonllm"
+name = "jsonformer"
 version = "0.1.0"
 description = ""
-authors = ["rahulgs12 <gsr1998@gmail.com>"]
+authors = ["1rgs <rgsduke@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -12,6 +12,7 @@ jsonschema = "^4.17.3"
 torch = "^2.0.0"
 accelerate = "^0.18.0"
 bitsandbytes = "^0.38.1"
+termcolor = "^2.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -20,3 +21,7 @@ ipykernel = "^6.22.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[virtualenvs]
+create = true
+in-project = true
