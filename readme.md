@@ -12,6 +12,16 @@ that specifies the structure of the JSON.
 
 Current approaches to this problem are brittle and error-prone. They rely on prompt engineering, fine-tuning, and post-processing, but they still fail to generate syntactically correct JSON in many cases.
 
+Jsonformer is a new approach to this problem. In structured data, many tokens are fixed and predictable. Jsonformer is a wrapper around HuggingFace models that fills in the fixed tokens during the generation process, and only delegates the generation of content tokens to the language model. This makes it more efficient and bulletproof than existing approaches.
+
+This currently supports a subset of JSON Schema. Below is a list of the supported schema types:
+
+- number
+- boolean
+- string
+- array
+- object
+
 ## Example
 
 ```python
@@ -40,33 +50,16 @@ generated_data = jsonformer()
 print(generated_data)
 ```
 
-Jsonformer is a new approach to this problem. In structured data, many tokens are fixed and predictable. Jsonformer is a wrapper around HuggingFace models that fills in the fixed tokens during the generation process, and only delegates the generation of content tokens to the language model. This makes it more efficient and bulletproof than existing approaches.
-
-This currently supports a subset of JSON Schema. Below is a list of the supported schema types:
-
-- number
-- boolean
-- string
-- array
-- object
-
 ## Features
 
 - Bulletproof JSON generation: Jsonformer ensures that the generated JSON is always syntactically correct and conforms to the specified schema.
 - Efficiency: By generating only the content tokens and filling in the fixed tokens, Jsonformer is more efficient than generating a full JSON string and parsing it.
 - Flexible and extendable: Jsonformer is built on top of the HuggingFace transformers library, making it compatible with any model that supports the HuggingFace interface.
 
-## Usage
+## Installation
 
-To use Jsonformer, you need to provide a language model, a tokenizer, a JSON schema, and a prompt. Optionally, you can enable debugging, and set the maximum array length for generated arrays.
-
-```python
-from transformers import PreTrainedModel, PreTrainedTokenizer
-from typing import Dict, Any
-from jsonformer import Jsonformer
-
-jsonformer = Jsonformer(model, tokenizer, json_schema, prompt, debug=True, max_array_length=10)
-generated_data = jsonformer()
+```bash
+pip install jsonformer
 ```
 
 ## License
