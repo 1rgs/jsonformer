@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jsonformer"
-version = "0.3.0"
+version = "0.5.0"
 description = ""
 authors = ["1rgs <rgsduke@gmail.com>"]
 readme = "README.md"
@@ -9,15 +9,11 @@ readme = "README.md"
 python = "^3.10"
 termcolor = "^2.3.0"
 
-
-
-
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.22.0"
 torch = "^2.0.0"
 accelerate = "^0.18.0"
 bitsandbytes = "^0.38.1"
-termcolor = "^2.3.0"
 transformers = "^4.27.4"
 
 

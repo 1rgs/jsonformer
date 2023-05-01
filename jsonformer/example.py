@@ -4,7 +4,7 @@ from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
 )
-import torch
+
 
 
 weather_schema = {

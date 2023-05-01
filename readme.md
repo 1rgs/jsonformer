@@ -25,6 +25,7 @@ This currently supports a subset of JSON Schema. Below is a list of the supporte
 ## Example
 
 ```python
+from jsonformer import Jsonformer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 model = AutoModelForCausalLM.from_pretrained("databricks/dolly-v2-12b")
