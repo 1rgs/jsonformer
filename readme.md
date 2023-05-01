@@ -1,10 +1,10 @@
 # Jsonformer: A Bulletproof Way to Generate Structured JSON from Language Models.
 
-## Problem: Getting models to output structed JSON is hard
+### Problem: Getting models to output structed JSON is hard
 
-## Solution: Only generate the content tokens and fill in the fixed tokens
+### Solution: Only generate the content tokens and fill in the fixed tokens
 
-![cover](img/cover3.png)
+![cover](img/cover4.png)
 
 Generating structured JSON from language models is a challenging task. The
 generated JSON must be syntactically correct, and it must conform to a schema
