@@ -18,6 +18,9 @@ class Jsonformer:
         prompt: str,
         debug: bool = False,
         max_array_length: int = 10,
+        max_number_tokens: int = 6,
+        temperature: float = 1.0,
+        max_string_token_length: int = 10,
     ):
         self.model = model
         self.tokenizer = tokenizer
@@ -31,6 +34,10 @@ class Jsonformer:
         self.debug_on = debug
         self.max_array_length = max_array_length
 
+        self.max_number_tokens = max_number_tokens
+        self.temperature = temperature
+        self.max_string_token_length = max_string_token_length
+
     def debug(self, *args, **kwargs):
         if self.debug_on:
             print(*args, **kwargs)
@@ -40,11 +47,11 @@ class Jsonformer:
         self.debug("[generate_number] prompt", prompt)
         response = self.model.generate(
             self.tokenizer.encode(prompt, return_tensors="pt"),
-            max_new_tokens=6,
+            max_new_tokens=self.max_number_tokens,
             num_return_sequences=1,
             logits_processor=[self.number_logit_processor],
             stopping_criteria=[self.number_stop_criteria],
-            temperature=1.2,
+            temperature=self.temperature,
             pad_token_id=self.tokenizer.eos_token_id,
         )
         response = self.tokenizer.decode(response[0], skip_special_tokens=True)
@@ -85,9 +92,9 @@ class Jsonformer:
         self.debug("[generate_string] prompt", prompt)
         response = self.model.generate(
             self.tokenizer.encode(prompt, return_tensors="pt"),
-            max_new_tokens=8,
+            max_new_tokens=self.max_string_token_length,
             num_return_sequences=1,
-            temperature=1.3,
+            temperature=self.temperature,
             pad_token_id=self.tokenizer.eos_token_id,
         )
         response = self.tokenizer.decode(response[0], skip_special_tokens=True)
@@ -135,7 +142,7 @@ class Jsonformer:
             raise ValueError(f"Unsupported schema type: {schema_type}")
 
     def generate_array(self, item_schema: Dict[str, Any], obj: Dict[str, Any]) -> list:
-        for i in range(self.max_array_length):
+        for _ in range(self.max_array_length):
             element = self.generate_value(item_schema, obj)
             obj[-1] = element
 
@@ -148,18 +155,10 @@ class Jsonformer:
 
             close_bracket_token_id = self.tokenizer.convert_tokens_to_ids("]")
             comma_token_id = self.tokenizer.convert_tokens_to_ids(", ")
-            self.debug(
-                "[generate_array] token_ids", close_bracket_token_id, comma_token_id
-            )
             close_bracket_logits = logits[close_bracket_token_id]
             comma_logits = logits[comma_token_id]
 
-            self.debug(
-                "[generate_array] close_bracket_logits",
-                close_bracket_logits,
-                "comma_logits",
-                comma_logits,
-            )
+        
 
             if close_bracket_logits > comma_logits:
                 break
