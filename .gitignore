@@ -1,4 +1,4 @@
-jsonllm/__pycache__
+__pycache__/
 .venv
 workspace.ipynb
 dist
