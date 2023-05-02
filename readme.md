@@ -45,7 +45,7 @@ schema = {
 }
 
 prompt = "Generate a person's information based on the following schema:"
-jsonformer = Jsonformer(model, tokenizer, json_schema, prompt)
+jsonformer = Jsonformer(model, tokenizer, schema, prompt)
 generated_data = jsonformer()
 
 print(generated_data)
