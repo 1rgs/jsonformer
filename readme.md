@@ -31,7 +31,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 model = AutoModelForCausalLM.from_pretrained("databricks/dolly-v2-12b")
 tokenizer = AutoTokenizer.from_pretrained("databricks/dolly-v2-12b")
 
-schema = {
+json_schema = {
     "type": "object",
     "properties": {
         "name": {"type": "string"},
