@@ -4,6 +4,8 @@
 
 ### Solution: Only generate the content tokens and fill in the fixed tokens
 
+[![colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/1rgs/jsonformer/blob/main/Jsonformer_example.ipynb)
+
 ![cover](img/cover4.png)
 
 Generating structured JSON from language models is a challenging task. The
