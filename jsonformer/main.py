@@ -122,13 +122,22 @@ class Jsonformer:
     ) -> Any:
         schema_type = schema["type"]
         if schema_type == "number":
-            obj[key if key else -1] = self.generation_marker
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
             return self.generate_number()
         elif schema_type == "boolean":
-            obj[key if key else -1] = self.generation_marker
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
             return self.generate_boolean()
         elif schema_type == "string":
-            obj[key if key else -1] = self.generation_marker
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
             return self.generate_string()
         elif schema_type == "array":
             new_array = []
@@ -157,9 +166,7 @@ class Jsonformer:
             comma_token_id = self.tokenizer.convert_tokens_to_ids(", ")
             close_bracket_logits = logits[close_bracket_token_id]
             comma_logits = logits[comma_token_id]
-
         
-
             if close_bracket_logits > comma_logits:
                 break
 
