@@ -145,7 +145,10 @@ class Jsonformer:
             return self.generate_array(schema["items"], new_array)
         elif schema_type == "object":
             new_obj = {}
-            obj[key if key else -1] = new_obj
+            if key:
+                obj[key] = new_obj
+            else:
+                obj.append(new_obj)
             return self.generate_object(schema["properties"], new_obj)
         else:
             raise ValueError(f"Unsupported schema type: {schema_type}")
@@ -179,7 +182,7 @@ class Jsonformer:
         if gen_marker_index != -1:
             progress = progress[:gen_marker_index]
         else:
-            print("Failed to find generation marker")
+            raise ValueError("Failed to find generation marker")
 
         prompt = template.format(
             prompt=self.prompt,
