@@ -65,6 +65,20 @@ print(generated_data)
 pip install jsonformer
 ```
 
+## Development
+
+<!-- https://python-poetry.org/docs/#installation -->
+
+[Poetry](https://python-poetry.org/docs/#installation) is used for dependency management.
+
+```bash
+poetry install
+```
+
+```bash
+poetry run python -m jsonllm.example
+```
+
 ## License
 
 Jsonformer is released under the MIT License. You are free to use, modify, and distribute this software for any purpose, commercial or non-commercial, as long as the original copyright and license notice are included.
