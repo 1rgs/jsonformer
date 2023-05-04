@@ -16,6 +16,8 @@ class Jsonformer:
         tokenizer: PreTrainedTokenizer,
         json_schema: Dict[str, Any],
         prompt: str,
+        *,
+        device: str,
         debug: bool = False,
         max_array_length: int = 10,
         max_number_tokens: int = 6,
@@ -37,6 +39,7 @@ class Jsonformer:
         self.max_number_tokens = max_number_tokens
         self.temperature = temperature
         self.max_string_token_length = max_string_token_length
+        self.device = device
 
     def debug(self, *args, **kwargs):
         if self.debug_on:
@@ -46,7 +49,7 @@ class Jsonformer:
         prompt = self.get_prompt()
         self.debug("[generate_number] prompt", prompt)
         response = self.model.generate(
-            self.tokenizer.encode(prompt, return_tensors="pt"),
+            self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device),
             max_new_tokens=self.max_number_tokens,
             num_return_sequences=1,
             logits_processor=[self.number_logit_processor],
@@ -70,7 +73,7 @@ class Jsonformer:
         self.debug("[generate_boolean] prompt", prompt)
 
         input_tensor = self.tokenizer.encode(prompt, return_tensors="pt")
-        output = self.model.forward(input_tensor)
+        output = self.model.forward(input_tensor.to(self.model.device))
         logits = output.logits[0, -1]
 
         true_token_id = self.tokenizer.convert_tokens_to_ids("true")
@@ -91,7 +94,7 @@ class Jsonformer:
         prompt = self.get_prompt()
         self.debug("[generate_string] prompt", prompt)
         response = self.model.generate(
-            self.tokenizer.encode(prompt, return_tensors="pt"),
+            self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device),
             max_new_tokens=self.max_string_token_length,
             num_return_sequences=1,
             temperature=self.temperature,
@@ -118,7 +121,7 @@ class Jsonformer:
         self,
         schema: Dict[str, Any],
         obj: Union[Dict[str, Any], List[Any]],
-        key: str | None = None,
+        key: Union[str, None] = None,
     ) -> Any:
         schema_type = schema["type"]
         if schema_type == "number":
@@ -162,14 +165,14 @@ class Jsonformer:
             input_prompt = self.get_prompt()
             obj.pop()
             input_tensor = self.tokenizer.encode(input_prompt, return_tensors="pt")
-            output = self.model.forward(input_tensor)
+            output = self.model.forward(input_tensor.to(self.model.device))
             logits = output.logits[0, -1]
 
             close_bracket_token_id = self.tokenizer.convert_tokens_to_ids("]")
             comma_token_id = self.tokenizer.convert_tokens_to_ids(", ")
             close_bracket_logits = logits[close_bracket_token_id]
             comma_logits = logits[comma_token_id]
-        
+
             if close_bracket_logits > comma_logits:
                 break
 
@@ -194,7 +197,6 @@ class Jsonformer:
 
     def __call__(self) -> Dict[str, Any]:
         self.value = {}
-
         generated_data = self.generate_object(
             self.json_schema["properties"], self.value
         )

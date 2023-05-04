@@ -6,7 +6,6 @@ from transformers import (
 )
 
 
-
 weather_schema = {
     "type": "object",
     "properties": {
@@ -26,7 +25,10 @@ weather_schema = {
 
 print("Loading model and tokenizer...")
 model_name = "databricks/dolly-v2-12b"
-model = AutoModelForCausalLM.from_pretrained(model_name, use_cache=True)
+
+model = AutoModelForCausalLM.from_pretrained(
+    model_name, use_cache=True, device_map="auto"
+)
 tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True, use_cache=True)
 print("Loaded model and tokenizer")
 
@@ -37,6 +39,7 @@ builder = Jsonformer(
     json_schema=weather_schema,
     prompt="generate the weather",
     debug=True,
+    device="cuda",
 )
 
 print("Generating...")
