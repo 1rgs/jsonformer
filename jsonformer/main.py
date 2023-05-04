@@ -64,7 +64,6 @@ class Jsonformer:
         response = response[len(prompt) :]
         response = response.strip().rstrip(".")
 
-        print("response", "|" + response + "|")
         try:
             return float(response)
         except ValueError:
