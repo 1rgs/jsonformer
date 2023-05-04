@@ -38,8 +38,6 @@ builder = Jsonformer(
     tokenizer=tokenizer,
     json_schema=weather_schema,
     prompt="generate the weather",
-    debug=True,
-    device="cuda",
 )
 
 print("Generating...")

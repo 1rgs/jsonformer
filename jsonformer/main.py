@@ -17,7 +17,6 @@ class Jsonformer:
         json_schema: Dict[str, Any],
         prompt: str,
         *,
-        device: str,
         debug: bool = False,
         max_array_length: int = 10,
         max_number_tokens: int = 6,
@@ -30,7 +29,6 @@ class Jsonformer:
         self.prompt = prompt
 
         self.number_logit_processor = OutputNumbersTokens(self.tokenizer, self.prompt)
-        self.number_stop_criteria = NumberStoppingCriteria(self.tokenizer, 3)
 
         self.generation_marker = "|GENERATION|"
         self.debug_on = debug
@@ -39,22 +37,26 @@ class Jsonformer:
         self.max_number_tokens = max_number_tokens
         self.temperature = temperature
         self.max_string_token_length = max_string_token_length
-        self.device = device
 
     def debug(self, *args, **kwargs):
         if self.debug_on:
             print(*args, **kwargs)
 
-    def generate_number(self) -> float:
+    def generate_number(self, temperature: Union[float, None] = None, iterations=0):
         prompt = self.get_prompt()
         self.debug("[generate_number] prompt", prompt)
+        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
+            self.model.device
+        )
         response = self.model.generate(
-            self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device),
+            input_tokens,
             max_new_tokens=self.max_number_tokens,
             num_return_sequences=1,
             logits_processor=[self.number_logit_processor],
-            stopping_criteria=[self.number_stop_criteria],
-            temperature=self.temperature,
+            stopping_criteria=[
+                NumberStoppingCriteria(self.tokenizer, len(input_tokens[0]))
+            ],
+            temperature=temperature or self.temperature,
             pad_token_id=self.tokenizer.eos_token_id,
         )
         response = self.tokenizer.decode(response[0], skip_special_tokens=True)
@@ -62,11 +64,14 @@ class Jsonformer:
         response = response[len(prompt) :]
         response = response.strip().rstrip(".")
 
+        print("response", "|" + response + "|")
         try:
             return float(response)
         except ValueError:
-            print("ValueError")
-            return
+            if iterations > 3:
+                raise ValueError("Failed to generate a valid number")
+
+            return self.generate_number(temperature=self.temperature * 1.3)
 
     def generate_boolean(self) -> bool:
         prompt = self.get_prompt()
