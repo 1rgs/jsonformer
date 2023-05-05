@@ -121,6 +121,43 @@ class Jsonformer:
             obj[key] = self.generate_value(schema, obj, key)
         return obj
 
+    def should_generate_non_null(self) -> bool:
+        prompt = self.get_prompt()
+        input_tensor = self.tokenizer.encode(prompt, return_tensors="pt")
+        output = self.model.forward(input_tensor.to(self.model.device))
+        logits = output.logits[0, -1]
+
+        # Get the top 5 tokens by logit value and print them
+        top_5_tokens = logits.topk(5).indices.tolist()
+        print("top 5 tokens")
+        for token_id in top_5_tokens:
+            decoded_token = self.tokenizer.decode([token_id])
+            print(f"|{decoded_token}|: {logits[token_id]}")
+
+        # Sort logits in descending order and loop through them
+        sorted_logit_indices = logits.argsort(descending=True).tolist()
+        for token_id in sorted_logit_indices:
+            decoded_token = self.tokenizer.decode([token_id])
+
+            print(f"decoded_token: |{decoded_token}|")
+
+            decoded_token = decoded_token.strip()
+
+            # If the decoded token is not empty and not only spaces or newlines
+            if decoded_token and not decoded_token.isspace():
+                if decoded_token == "null":
+                    print("decoded_token is null, breaking and returning False")
+                    # If the decoded token is "null", break and return False
+                    return False
+                else:
+                    print("decoded_token is not null, returning True")
+                    # If the decoded token is not "null", return True
+                    return True
+            else:
+                print("decoded_token is empty or only spaces or newlines - skipping")
+
+        return False
+
     def generate_value(
         self,
         schema: Dict[str, Any],
@@ -128,26 +165,36 @@ class Jsonformer:
         key: Union[str, None] = None,
     ) -> Any:
         schema_type = schema["type"]
+
+        if key:
+            obj[key] = self.generation_marker
+        else:
+            obj.append(self.generation_marker)
+
+        if isinstance(schema_type, list):
+            if len(schema_type) != 2 or "null" not in schema_type:
+                raise ValueError(
+                    f"Unsupported schema type: {schema_type}. Only nullable types are supported"
+                )
+
+            non_null_type = [t for t in schema_type if t != "null"][0]
+            schema_type = non_null_type if self.should_generate_non_null() else "null"
+
+        if schema_type == "null":
+            return None
+
         if schema_type == "number":
-            if key:
-                obj[key] = self.generation_marker
-            else:
-                obj.append(self.generation_marker)
             return self.generate_number()
         elif schema_type == "boolean":
-            if key:
-                obj[key] = self.generation_marker
-            else:
-                obj.append(self.generation_marker)
             return self.generate_boolean()
         elif schema_type == "string":
-            if key:
-                obj[key] = self.generation_marker
-            else:
-                obj.append(self.generation_marker)
             return self.generate_string()
         elif schema_type == "array":
             new_array = []
+            if key:
+                obj[key] = new_array
+            else:
+                obj.append(new_array)
             obj[key] = new_array
             return self.generate_array(schema["items"], new_array)
         elif schema_type == "object":
