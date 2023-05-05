@@ -115,7 +115,7 @@ poetry install
 ```
 
 ```bash
-poetry run python -m jsonllm.example
+poetry run python -m jsonformer.example
 ```
 
 ## License
