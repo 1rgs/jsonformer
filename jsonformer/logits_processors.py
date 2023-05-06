@@ -3,6 +3,27 @@ from transformers import PreTrainedTokenizer, LogitsWarper, StoppingCriteria
 import torch
 
 
+class StringStoppingCriteria(StoppingCriteria):
+    def __init__(self, tokenizer: PreTrainedTokenizer, prompt_length: int):
+        self.tokenizer = tokenizer
+        self.prompt_length = prompt_length
+
+    def __call__(
+        self,
+        input_ids: torch.LongTensor,
+        _,
+    ) -> bool:
+        if len(input_ids[0]) <= self.prompt_length:
+            return False
+
+        last_token_id = input_ids[0][-1]
+        last_token = self.tokenizer.decode(last_token_id, skip_special_tokens=True)
+
+        result = '"' in last_token
+
+        return result
+
+
 class NumberStoppingCriteria(StoppingCriteria):
     def __init__(
         self,
