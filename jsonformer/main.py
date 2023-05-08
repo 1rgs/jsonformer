@@ -135,9 +135,7 @@ class Jsonformer:
         self.debug("[generate_string]", "|" + response + "|")
 
         if response.count('"') < 1:
-            raise ValueError(
-                "Failed to generate a valid string, try increasing max_string_token_length"
-            )
+            return response
 
         return response.split('"')[0].strip()
 
@@ -201,12 +199,23 @@ class Jsonformer:
             output = self.model.forward(input_tensor.to(self.model.device))
             logits = output.logits[0, -1]
 
-            close_bracket_token_id = self.tokenizer.convert_tokens_to_ids("]")
-            comma_token_id = self.tokenizer.convert_tokens_to_ids(", ")
-            close_bracket_logits = logits[close_bracket_token_id]
-            comma_logits = logits[comma_token_id]
 
-            if close_bracket_logits > comma_logits:
+            top_indices = logits.topk(30).indices
+            sorted_token_ids = top_indices[logits[top_indices].argsort(descending=True)]
+
+            found_comma = False
+            found_close_bracket = False
+
+            for token_id in sorted_token_ids:
+                decoded_token = self.tokenizer.decode(token_id)
+                if ',' in decoded_token:
+                    found_comma = True
+                    break
+                if ']' in decoded_token:
+                    found_close_bracket = True
+                    break
+
+            if found_close_bracket or not found_comma:
                 break
 
         return obj
