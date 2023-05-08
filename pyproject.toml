@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jsonformer"
-version = "0.10.0"
+version = "0.11.0"
 description = ""
 authors = ["1rgs <rgsduke@gmail.com>"]
 readme = "README.md"
