@@ -117,6 +117,7 @@ class Jsonformer:
             stopping_criteria=[
                 StringStoppingCriteria(self.tokenizer, len(input_tokens[0]))
             ],
+            pad_token_id=self.tokenizer.eos_token_id,
         )
 
         # Some models output the prompt as part of the response
