@@ -1,4 +1,4 @@
-from typing import List, Union, Dict, Any
+from typing import List, Set, Union, Dict, Any
 
 from jsonformer.logits_processors import (
     NumberStoppingCriteria,
@@ -10,6 +10,7 @@ from jsonformer.logits_processors import (
 from termcolor import cprint
 from transformers import PreTrainedModel, PreTrainedTokenizer
 import json
+import torch
 
 GENERATION_MARKER = "|GENERATION|"
 
@@ -172,6 +173,32 @@ class Jsonformer:
 
         return response.split('"')[0].strip()
 
+    def generate_enum(self, enum_values: Set[str]) -> str:
+        prompt = self.get_prompt()
+        self.debug("[generate_enum]", prompt, is_prompt=True)
+        prompt_tokens = self.tokenizer.encode(prompt, return_tensors="pt")
+
+        highest_probability = 0.0
+        best_option = None
+        for option in enum_values:
+            option_tokens = self.tokenizer.encode(f'"{option}"', return_tensors="pt")
+            n_option_tokens = option_tokens.shape[1]
+            prompt_option_tokens = torch.concat([prompt_tokens, option_tokens], dim=1)
+
+            with torch.no_grad():
+                logits = self.model.forward(prompt_option_tokens.to(self.model.device)).logits[0, -n_option_tokens-1:-1]
+            probabilities = torch.softmax(logits, dim=1)
+            option_token_probabilities = probabilities[torch.arange(probabilities.shape[0]), option_tokens]
+            option_probability = torch.prod(option_token_probabilities).item()
+
+            if option_probability > highest_probability:
+                best_option = option
+                highest_probability = option_probability
+
+        self.debug("[generate_enum]", best_option)
+
+        return best_option
+
     def generate_object(
         self, properties: Dict[str, Any], obj: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -211,6 +238,12 @@ class Jsonformer:
             else:
                 obj.append(self.generation_marker)
             return self.generate_string()
+        elif schema_type == "enum":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_enum(set(schema["values"]))
         elif schema_type == "array":
             new_array = []
             obj[key] = new_array
