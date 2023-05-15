@@ -124,11 +124,8 @@ class Jsonformer:
         output = self.model.forward(input_tensor.to(self.model.device))
         logits = output.logits[0, -1]
 
-        # todo: this assumes that "true" and "false" are both tokenized to a single token
-        # this is probably not true for all tokenizers
-        # this can be fixed by looking at only the first token of both "true" and "false"
-        true_token_id = self.tokenizer.convert_tokens_to_ids("true")
-        false_token_id = self.tokenizer.convert_tokens_to_ids("false")
+        true_token_id = self.tokenizer.encode("true", return_tensors="pt")[0, 0]
+        false_token_id = self.tokenizer.encode("false", return_tensors="pt")[0, 0]
 
         result = logits[true_token_id] > logits[false_token_id]
 
