@@ -3,6 +3,8 @@ from typing import List, Union, Dict, Any
 from jsonformer.logits_processors import (
     NumberStoppingCriteria,
     OutputNumbersTokens,
+    IntegerStoppingCriteria,
+    OutputIntegersTokens,
     StringStoppingCriteria,
 )
 from termcolor import cprint
@@ -34,6 +36,7 @@ class Jsonformer:
         self.prompt = prompt
 
         self.number_logit_processor = OutputNumbersTokens(self.tokenizer, self.prompt)
+        self.integer_logit_processor = OutputIntegersTokens(self.tokenizer, self.prompt)
 
         self.generation_marker = "|GENERATION|"
         self.debug_on = debug
@@ -81,6 +84,36 @@ class Jsonformer:
                 raise ValueError("Failed to generate a valid number")
 
             return self.generate_number(temperature=self.temperature * 1.3)
+
+    def generate_integer(self, temperature: Union[float, None] = None, iterations=0):
+        prompt = self.get_prompt()
+        self.debug("[generate_number]", prompt, is_prompt=True)
+        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
+            self.model.device
+        )
+        response = self.model.generate(
+            input_tokens,
+            max_new_tokens=self.max_number_tokens,
+            num_return_sequences=1,
+            logits_processor=[self.integer_logit_processor],
+            stopping_criteria=[
+                IntegerStoppingCriteria(self.tokenizer, len(input_tokens[0]))
+            ],
+            temperature=temperature or self.temperature,
+            pad_token_id=self.tokenizer.eos_token_id,
+        )
+        response = self.tokenizer.decode(response[0], skip_special_tokens=True)
+
+        response = response[len(prompt) :]
+        response = response.strip()
+        self.debug("[generate_integer]", response)
+        try:
+            return int(response)
+        except ValueError:
+            if iterations > 3:
+                raise ValueError("Failed to generate a valid integer")
+
+            return self.generate_integer(temperature=self.temperature * 1.3)
 
     def generate_boolean(self) -> bool:
         prompt = self.get_prompt()
@@ -160,6 +193,12 @@ class Jsonformer:
             else:
                 obj.append(self.generation_marker)
             return self.generate_number()
+        elif schema_type == "integer":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_integer()
         elif schema_type == "boolean":
             if key:
                 obj[key] = self.generation_marker
