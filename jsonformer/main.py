@@ -178,12 +178,12 @@ class Jsonformer:
         highest_probability = 0.0
         best_option = None
         for option in enum_values:
-            option_tokens = self.tokenizer.encode(f'"{option}"', return_tensors="pt")
-            n_option_tokens = option_tokens.shape[1]
-            prompt_option_tokens = torch.concat([prompt_tokens, option_tokens], dim=1)
+            n_option_tokens = self.tokenizer.encode(f'"{option}"', add_special_tokens=False, return_tensors="pt").shape[1]
+            prompt_tokens = self.tokenizer.encode(prompt + f'"{option}"', return_tensors="pt")
+            option_tokens = prompt_tokens[0, -n_option_tokens:]
 
             with torch.no_grad():
-                logits = self.model.forward(prompt_option_tokens.to(self.model.device)).logits[0, -n_option_tokens-1:-1]
+                logits = self.model.forward(prompt_tokens[:, :-1].to(self.model.device)).logits[0, -n_option_tokens:]
             probabilities = torch.softmax(logits, dim=1)
             option_token_probabilities = probabilities[torch.arange(probabilities.shape[0]), option_tokens]
             option_probability = torch.prod(option_token_probabilities).item()
