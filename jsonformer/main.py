@@ -76,7 +76,9 @@ class Jsonformer:
         response = self.tokenizer.decode(response[0], skip_special_tokens=True)
 
         response = response[len(prompt) :]
-        response = response.strip().rstrip(".")
+        if "," in response:
+            response = response.split(",")[0]
+        response = response.replace(" ", "").rstrip(".")
         self.debug("[generate_number]", response)
         try:
             return float(response)
@@ -106,7 +108,9 @@ class Jsonformer:
         response = self.tokenizer.decode(response[0], skip_special_tokens=True)
 
         response = response[len(prompt) :]
-        response = response.strip()
+        if "," in response:
+            response = response.split(",")[0]
+        response = response.replace(" ", "")
         self.debug("[generate_integer]", response)
         try:
             return int(response)

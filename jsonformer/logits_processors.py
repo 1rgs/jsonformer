@@ -48,14 +48,21 @@ class NumberStoppingCriteria(StoppingCriteria):
 
         if (
             decoded.count(".") == 1
-            and len(decoded.strip().split(".")[1]) > self.precision
+            and len(decoded.replace(" ", "").split(".")[1]) > self.precision
+        ):
+            return True
+        
+        if (
+            len(decoded) > 1
+            and "," in decoded
+            and any(c.isdigit() for c in decoded.split(",")[0])
         ):
             return True
 
         if (
             len(decoded) > 1
             and any(c.isdigit() for c in decoded)
-            and decoded[-1] in [" ", "\n"]
+            and ("," in decoded or decoded[-1] in (" ", "\n"))
         ):
             return True
 
@@ -71,9 +78,16 @@ class OutputNumbersTokens(LogitsWarper):
         for _, token_id in tokenizer.get_vocab().items():
             token_str = tokenizer.decode(token_id).strip()
 
-            if token_str == "" or (
-                all(c.isdigit() or c == "." for c in token_str)
-                and token_str.count(".") <= 1
+            if (
+                token_str == ""
+                or (
+                    all(c.isdigit() or c == "." for c in token_str)
+                    and token_str.count(".") <= 1
+                ) or (
+                    "," in token_str
+                    and all(c.isdigit() or c == "." for c in token_str.split(",")[0])
+                    and token_str.count(".") <= 1
+                )
             ):
                 self.allowed_mask[token_id] = True
 
@@ -108,8 +122,15 @@ class IntegerStoppingCriteria(StoppingCriteria):
 
         if (
             len(decoded) > 1
+            and "," in decoded
+            and any(c.isdigit() for c in decoded.split(",")[0])
+        ):
+            return True
+        
+        if (
+            len(decoded) > 1
             and any(c.isdigit() for c in decoded)
-            and decoded[-1] in [" ", "\n"]
+            and decoded[-1] in (" ", "\n")
         ):
             return True
 
@@ -125,7 +146,11 @@ class OutputIntegersTokens(LogitsWarper):
         for _, token_id in tokenizer.get_vocab().items():
             token_str = tokenizer.decode(token_id).strip()
 
-            if token_str == "" or all(c.isdigit() for c in token_str):
+            if (
+                token_str == ""
+                or all(c.isdigit() for c in token_str)
+                or "," in token_str and all(c.isdigit() for c in token_str.split(",")[0])
+            ):
                 self.allowed_mask[token_id] = True
 
     def __call__(self, _, scores):
