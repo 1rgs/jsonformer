@@ -181,7 +181,7 @@ class Jsonformer:
         # These are necessary because we don't know if we're at the end or middle of an object/array
         terminal_tokens = torch.concat([
             self.tokenizer.encode(s, add_special_tokens=False, return_tensors="pt")[:, 0]
-            for s in ('", "', '"}', '"]dsdsf')
+            for s in ('", "', '"}', '"]')
         ])
 
         highest_probability = 0.0
