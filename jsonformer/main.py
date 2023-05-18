@@ -173,20 +173,26 @@ class Jsonformer:
     def generate_enum(self, enum_values: Set[str]) -> str:
         prompt = self.get_prompt()
         self.debug("[generate_enum]", prompt, is_prompt=True)
-        prompt_tokens = self.tokenizer.encode(prompt, return_tensors="pt")
+
+        # These are necessary because we don't know if we're at the end or middle of an object/array
+        terminal_tokens = torch.concat([
+            self.tokenizer.encode(s, add_special_tokens=False, return_tensors="pt")[:, 0]
+            for s in ('", "', '"}', '"]dsdsf')
+        ])
 
         highest_probability = 0.0
         best_option = None
         for option in enum_values:
-            n_option_tokens = self.tokenizer.encode(f'"{option}"', add_special_tokens=False, return_tensors="pt").shape[1]
-            prompt_tokens = self.tokenizer.encode(prompt + f'"{option}"', return_tensors="pt")
+            n_option_tokens = self.tokenizer.encode(f'"{option}', add_special_tokens=False, return_tensors="pt").shape[1]
+            prompt_tokens = self.tokenizer.encode(prompt + f'"{option}', return_tensors="pt")
             option_tokens = prompt_tokens[0, -n_option_tokens:]
 
             with torch.no_grad():
-                logits = self.model.forward(prompt_tokens[:, :-1].to(self.model.device)).logits[0, -n_option_tokens:]
+                logits = self.model.forward(prompt_tokens.to(self.model.device)).logits[0, -n_option_tokens-1:]
             probabilities = torch.softmax(logits, dim=1)
-            option_token_probabilities = probabilities[torch.arange(probabilities.shape[0]), option_tokens]
-            option_probability = torch.prod(option_token_probabilities).item()
+            option_token_probabilities = probabilities[:-1][torch.arange(probabilities.shape[0]-1), option_tokens]
+            termination_probability = torch.max(probabilities[-1, terminal_tokens])
+            option_probability = torch.prod(option_token_probabilities) * termination_probability
 
             if option_probability > highest_probability:
                 best_option = option
