@@ -5,6 +5,7 @@
 ### Solution: Only generate the content tokens and fill in the fixed tokens
 
 [![colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/1rgs/jsonformer/blob/main/Jsonformer_example.ipynb)
+[![Open in Spaces](https://img.shields.io/badge/%F0%9F%A4%97-Open%20in%20Spaces-blue)](https://huggingface.co/spaces/mishig/jsonformer)
 
 ![cover](img/cover4.png)
 
