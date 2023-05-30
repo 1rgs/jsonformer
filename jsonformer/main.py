@@ -80,7 +80,7 @@ class Jsonformer:
             if iterations > 3:
                 raise ValueError("Failed to generate a valid number")
 
-            return self.generate_number(temperature=self.temperature * 1.3)
+            return self.generate_number(temperature=self.temperature * 1.3, iterations=iterations+1)
 
     def generate_boolean(self) -> bool:
         prompt = self.get_prompt()
