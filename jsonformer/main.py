@@ -59,7 +59,7 @@ class Jsonformer:
             self.model.device
         )
         response = self.model.generate(
-            input_tokens,
+            inputs=input_tokens,
             max_new_tokens=self.max_number_tokens,
             num_return_sequences=1,
             logits_processor=[self.number_logit_processor],
@@ -110,7 +110,7 @@ class Jsonformer:
         )
 
         response = self.model.generate(
-            input_tokens,
+            inputs=input_tokens,
             max_new_tokens=self.max_string_token_length,
             num_return_sequences=1,
             temperature=self.temperature,
