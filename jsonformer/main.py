@@ -147,7 +147,7 @@ class Jsonformer:
         input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
             self.model.device
         )
-        values = [f'"{value}"'if isinstance(value,str) else value for value in values]
+        values = [f'"{value}"'if isinstance(value,str) else str(value) for value in values]
 
         response = self.model.generate(
             input_tokens,
@@ -178,7 +178,9 @@ class Jsonformer:
         if response[0] == response[-1] == '"':
             return response[1:-1]
         
-        return float(response)
+        if '.' in response:
+            return float(response)
+        return int(response)
 
     def generate_object(
         self, properties: Dict[str, Any], obj: Dict[str, Any]

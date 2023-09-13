@@ -127,7 +127,7 @@ class OutputEnumTokens(LogitsWarper):
     def build_tree(self, enums):
         tree = {}
         for enum in enums:
-            encoded_enum = self.tokenizer.encode(enum)[1:] # we want to skip sos token
+            encoded_enum = self.tokenizer.encode(enum, add_special_tokens=False)
             curr_obj = tree
             for code in encoded_enum:
                 if code in curr_obj.keys():
