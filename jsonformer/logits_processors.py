@@ -82,3 +82,27 @@ class OutputNumbersTokens(LogitsWarper):
         scores[~mask] = -float("inf")
 
         return scores
+
+
+class OutputLiteralTokens(LogitsWarper):
+    def __init__(self, tokenizer: PreTrainedTokenizer, prompt: str, enums):
+        self.tokenizer = tokenizer
+        self.tokenized_prompt = tokenizer(prompt, return_tensors="pt")
+        vocab_size = len(tokenizer)
+        self.allowed_mask = torch.zeros(vocab_size, dtype=torch.bool)
+        self.enums = [f'"{enum}"'if isinstance(enum,str) else enum for enum in enums]
+
+
+    def __call__(self, _, scores):
+        allowed_tokens = []
+        for _, token_id in self.tokenizer.get_vocab().items():
+            token_str = self.tokenizer.decode(token_id).strip()
+            for enum in self.enums:
+                if enum.startswith(token_str):
+                    allowed_tokens.append(token_id)
+        
+
+        mask = self.allowed_mask.expand_as(scores)
+        scores[~mask] = -float("inf")
+        return scores
+

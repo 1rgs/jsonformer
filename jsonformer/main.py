@@ -138,6 +138,43 @@ class Jsonformer:
             return response
 
         return response.split('"')[0].strip()
+    
+    def generate_enum(self) -> str:
+        prompt = self.get_prompt() + '"'
+        self.debug("[generate_string]", prompt, is_prompt=True)
+        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
+            self.model.device
+        )
+
+        response = self.model.generate(
+            input_tokens,
+            max_new_tokens=self.max_string_token_length,
+            num_return_sequences=1,
+            temperature=self.temperature,
+            stopping_criteria=[
+                StringStoppingCriteria(self.tokenizer, len(input_tokens[0]))
+            ],
+            pad_token_id=self.tokenizer.eos_token_id,
+        )
+
+        # Some models output the prompt as part of the response
+        # This removes the prompt from the response if it is present
+        if (
+            len(response[0]) >= len(input_tokens[0])
+            and (response[0][: len(input_tokens[0])] == input_tokens).all()
+        ):
+            response = response[0][len(input_tokens[0]) :]
+        if response.shape[0] == 1:
+            response = response[0]
+
+        response = self.tokenizer.decode(response, skip_special_tokens=True)
+
+        self.debug("[generate_string]", "|" + response + "|")
+
+        if response.count('"') < 1:
+            return response
+
+        return response.split('"')[0].strip()
 
     def generate_object(
         self, properties: Dict[str, Any], obj: Dict[str, Any]
@@ -146,6 +183,7 @@ class Jsonformer:
             self.debug("[generate_object] generating value for", key)
             obj[key] = self.generate_value(schema, obj, key)
         return obj
+    
 
     def generate_value(
         self,
