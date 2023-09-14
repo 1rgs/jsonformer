@@ -151,7 +151,7 @@ class Jsonformer:
 
         response = self.model.generate(
             input_tokens,
-            max_new_tokens=max([len(self.tokenizer.encode(value)[1:]) for value in values]),
+            max_new_tokens=max([len(self.tokenizer.encode(value, add_special_tokens=False)) for value in values]),
             num_return_sequences=1,
             temperature=self.temperature,
             logits_processor=[OutputEnumTokens(self.tokenizer, values)],
