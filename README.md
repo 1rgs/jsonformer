@@ -94,6 +94,31 @@ print(generated_data)
 }
 ```
 
+### Example Enum
+```python
+color = {
+    "type": "object",
+    "properties": {
+        "color": {
+            "type": "enum",
+            "values": [
+                "black",
+                "red",
+                "white",
+                "green",
+                "blue"
+            ]
+        }
+    }
+}
+```
+
+```python
+{
+  color: "blue"
+}
+```
+
 ## Features
 
 - Bulletproof JSON generation: Jsonformer ensures that the generated JSON is always syntactically correct and conforms to the specified schema.

@@ -4,6 +4,8 @@ from jsonformer.logits_processors import (
     NumberStoppingCriteria,
     OutputNumbersTokens,
     StringStoppingCriteria,
+    EnumStoppingCriteria,
+    OutputEnumTokens
 )
 from termcolor import cprint
 from transformers import PreTrainedModel, PreTrainedTokenizer
@@ -138,6 +140,47 @@ class Jsonformer:
             return response
 
         return response.split('"')[0].strip()
+    
+    def generate_enum(self, values) -> str:
+        prompt = self.get_prompt()
+        self.debug("[generate_enum]", prompt, is_prompt=True)
+        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
+            self.model.device
+        )
+        values = [f'"{value}"'if isinstance(value,str) else str(value) for value in values]
+
+        response = self.model.generate(
+            input_tokens,
+            max_new_tokens=max([len(self.tokenizer.encode(value, add_special_tokens=False)) for value in values]),
+            num_return_sequences=1,
+            temperature=self.temperature,
+            logits_processor=[OutputEnumTokens(self.tokenizer, values)],
+            stopping_criteria=[
+                EnumStoppingCriteria(self.tokenizer, len(input_tokens[0]), values)
+            ],
+            pad_token_id=self.tokenizer.eos_token_id,
+        )
+
+        # Some models output the prompt as part of the response
+        # This removes the prompt from the response if it is present
+        if (
+            len(response[0]) >= len(input_tokens[0])
+            and (response[0][: len(input_tokens[0])] == input_tokens).all()
+        ):
+            response = response[0][len(input_tokens[0]) :]
+        if response.shape[0] == 1:
+            response = response[0]
+
+        response = self.tokenizer.decode(response, skip_special_tokens=True)
+
+        self.debug("[generate_enum]", "|" + response + "|")
+
+        if response[0] == response[-1] == '"':
+            return response[1:-1]
+        
+        if '.' in response:
+            return float(response)
+        return int(response)
 
     def generate_object(
         self, properties: Dict[str, Any], obj: Dict[str, Any]
@@ -146,6 +189,7 @@ class Jsonformer:
             self.debug("[generate_object] generating value for", key)
             obj[key] = self.generate_value(schema, obj, key)
         return obj
+    
 
     def generate_value(
         self,
@@ -183,6 +227,12 @@ class Jsonformer:
             else:
                 obj.append(new_obj)
             return self.generate_object(schema["properties"], new_obj)
+        elif schema_type == "enum":
+            if key:
+                obj[key] = self.generation_marker
+            else:
+                obj.append(self.generation_marker)
+            return self.generate_enum(schema["values"])
         else:
             raise ValueError(f"Unsupported schema type: {schema_type}")
 
