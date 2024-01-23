@@ -110,10 +110,11 @@ class Jsonformer:
         )
 
         response = self.model.generate(
-            input_tokens,
+            inputs=input_tokens,
             max_new_tokens=self.max_string_token_length,
             num_return_sequences=1,
             temperature=self.temperature,
+            do_sample=True,
             stopping_criteria=[
                 StringStoppingCriteria(self.tokenizer, len(input_tokens[0]))
             ],
