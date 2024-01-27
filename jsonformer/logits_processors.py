@@ -2,6 +2,7 @@ from typing import List
 from transformers import PreTrainedTokenizer, LogitsWarper, StoppingCriteria
 import torch
 
+
 class StringStoppingCriteria(StoppingCriteria):
     def __init__(self, tokenizer: PreTrainedTokenizer, prompt_length: int):
         self.tokenizer = tokenizer
@@ -61,6 +62,7 @@ class NumberStoppingCriteria(StoppingCriteria):
 
         return False
 
+
 class OutputNumbersTokens(LogitsWarper):
     def __init__(self, tokenizer: PreTrainedTokenizer, prompt: str):
         self.tokenizer = tokenizer
@@ -75,6 +77,26 @@ class OutputNumbersTokens(LogitsWarper):
                 all(c.isdigit() or c == "." for c in token_str)
                 and token_str.count(".") <= 1
             ):
+                self.allowed_mask[token_id] = True
+
+    def __call__(self, _, scores):
+        mask = self.allowed_mask.expand_as(scores)
+        scores[~mask] = -float("inf")
+
+        return scores
+
+
+class OutputCommaAndBracketTokens(LogitsWarper):
+    def __init__(self, tokenizer: PreTrainedTokenizer, prompt: str):
+        self.tokenizer = tokenizer
+        self.tokenized_prompt = tokenizer(prompt, return_tensors="pt")
+        vocab_size = len(tokenizer)
+        self.allowed_mask = torch.zeros(vocab_size, dtype=torch.bool)
+
+        for _, token_id in tokenizer.get_vocab().items():
+            token_str = tokenizer.decode(token_id).strip()
+
+            if token_str in [",", "]"]:
                 self.allowed_mask[token_id] = True
 
     def __call__(self, _, scores):
