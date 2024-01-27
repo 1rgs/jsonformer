@@ -4,6 +4,7 @@ from jsonformer.logits_processors import (
     NumberStoppingCriteria,
     OutputNumbersTokens,
     StringStoppingCriteria,
+    OutputCommaAndBracketTokens,
 )
 from termcolor import cprint
 from transformers import PreTrainedModel, PreTrainedTokenizer
@@ -34,6 +35,9 @@ class Jsonformer:
         self.prompt = prompt
 
         self.number_logit_processor = OutputNumbersTokens(self.tokenizer, self.prompt)
+        self.array_end_logit_processor = OutputCommaAndBracketTokens(
+            self.tokenizer, self.prompt
+        )
 
         self.generation_marker = "|GENERATION|"
         self.debug_on = debug
@@ -80,7 +84,9 @@ class Jsonformer:
             if iterations > 3:
                 raise ValueError("Failed to generate a valid number")
 
-            return self.generate_number(temperature=self.temperature * 1.3, iterations=iterations+1)
+            return self.generate_number(
+                temperature=self.temperature * 1.3, iterations=iterations + 1
+            )
 
     def generate_boolean(self) -> bool:
         prompt = self.get_prompt()
@@ -195,27 +201,19 @@ class Jsonformer:
             obj.append(self.generation_marker)
             input_prompt = self.get_prompt()
             obj.pop()
-            input_tensor = self.tokenizer.encode(input_prompt, return_tensors="pt")
-            output = self.model.forward(input_tensor.to(self.model.device))
-            logits = output.logits[0, -1]
+            input_tokens = self.tokenizer.encode(input_prompt, return_tensors="pt").to(
+                self.model.device
+            )
+            response = self.model.generate(
+                input_tokens,
+                max_new_tokens=1,
+                num_return_sequences=1,
+                logits_processor=[self.array_end_logit_processor],
+                pad_token_id=self.tokenizer.eos_token_id,
+            )
+            last_token = self.tokenizer.decode(response[0][-1])
 
-
-            top_indices = logits.topk(30).indices
-            sorted_token_ids = top_indices[logits[top_indices].argsort(descending=True)]
-
-            found_comma = False
-            found_close_bracket = False
-
-            for token_id in sorted_token_ids:
-                decoded_token = self.tokenizer.decode(token_id)
-                if ',' in decoded_token:
-                    found_comma = True
-                    break
-                if ']' in decoded_token:
-                    found_close_bracket = True
-                    break
-
-            if found_close_bracket or not found_comma:
+            if "]" in last_token:
                 break
 
         return obj
